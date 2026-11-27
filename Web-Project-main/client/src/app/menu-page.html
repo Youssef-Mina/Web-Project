@@ -1,0 +1,63 @@
+@let s = state();
+
+@if (s.kind === 'loading') {
+  <header class="masthead">
+    <h1 class="restaurant">Loading menu…</h1>
+  </header>
+  <main class="sheet" aria-busy="true">
+    @for (row of [1, 2, 3, 4, 5]; track row) {
+      <div class="skeleton" aria-hidden="true"></div>
+    }
+  </main>
+} @else if (s.kind === 'error') {
+  <main class="notice" role="alert">
+    <h1>Menu unavailable</h1>
+    <p>{{ s.message }}</p>
+    <button type="button" class="retry" (click)="load()">Retry</button>
+  </main>
+} @else {
+  <header class="masthead">
+    <div class="masthead-row">
+      <h1 class="restaurant">{{ s.data.restaurant.name }}</h1>
+      <span class="table-chip">Table {{ s.data.table.number }}</span>
+    </div>
+
+    @if (s.data.menu.length > 1) {
+      <nav class="category-nav" aria-label="Menu sections">
+        @for (category of s.data.menu; track category.id) {
+          <button type="button" (click)="jumpTo(category.id)">{{ category.name }}</button>
+        }
+      </nav>
+    }
+  </header>
+
+  @if (!s.data.restaurant.orderingOpen) {
+    <p class="closed" role="status">Ordering is unavailable right now.</p>
+  }
+
+  <main class="sheet" aria-live="polite">
+    @for (category of s.data.menu; track category.id) {
+      <section class="category" [id]="'cat-' + category.id">
+        <h2>{{ category.name }}</h2>
+        <ul>
+          @for (item of category.items; track item.id) {
+            <li class="dish" [class.sold-out]="!item.isAvailable">
+              <div class="dish-info">
+                <h3>{{ item.name }}</h3>
+                @if (item.description) {
+                  <p>{{ item.description }}</p>
+                }
+                @if (!item.isAvailable) {
+                  <span class="badge">Sold out</span>
+                }
+              </div>
+              <span class="price">{{ item.pricePiastres | egp }}</span>
+            </li>
+          }
+        </ul>
+      </section>
+    } @empty {
+      <p class="empty">No dishes yet.</p>
+    }
+  </main>
+}
